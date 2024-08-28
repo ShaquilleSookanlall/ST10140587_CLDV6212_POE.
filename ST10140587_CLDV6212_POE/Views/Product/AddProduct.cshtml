@@ -1,0 +1,23 @@
+﻿@model ST10140587_CLDV6212_POE.Models.Product
+
+<h2>Add New Product</h2>
+
+<form asp-action="AddProduct" method="post" enctype="multipart/form-data">
+    <div>
+        <label>Name</label>
+        <input type="text" name="Product_Name" required />
+    </div>
+    <div>
+        <label>Description</label>
+        <textarea name="Product_Description"></textarea>
+    </div>
+    <div>
+        <label>Image</label>
+        <input type="file" name="file" required />
+    </div>
+    <div>
+        <label>Price</label>
+        <input type="number" name="Product_Price" required />
+    </div>
+    <button type="submit">Add Product</button>
+</form>

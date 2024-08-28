@@ -1,0 +1,26 @@
+﻿@model IEnumerable<ST10140587_CLDV6212_POE.Models.Transaction>
+
+<h1>All Transactions</h1>
+<a href="@Url.Action("Register", "Transaction")" class="btn btn-primary">Add New Transaction</a>
+<table class="table">
+    <thead>
+        <tr>
+            <th>Transaction ID</th>
+            <th>Product ID</th>
+            <th>Customer ID</th>
+            <th>Date</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var transaction in Model)
+
+        {
+            <tr>
+                <td>@transaction.transaction_Id</td>
+                <td>@transaction.Product_Id</td>
+                <td>@transaction.Customer_Id</td>
+                <td>@transaction.Transaction_Date</td>
+            </tr>
+        }
+    </tbody>
+</table>
