@@ -1,13 +1,13 @@
-﻿@model IEnumerable<ST10140587_CLDV6212_POE.Models.Transaction>
+﻿@model List<ST10140587_CLDV6212_POE.Models.Transaction>
 
-<h1>All Transactions</h1>
-<a href="@Url.Action("Register", "Transaction")" class="btn btn-primary">Add New Transaction</a>
+<h2>Transactions</h2>
+
 <table class="table">
     <thead>
         <tr>
             <th>Transaction ID</th>
-            <th>Product ID</th>
-            <th>Customer ID</th>
+            <th>Customer Name</th>
+            <th>Product Name</th>
             <th>Date</th>
         </tr>
     </thead>
@@ -16,10 +16,10 @@
 
         {
             <tr>
-                <td>@transaction.transaction_Id</td>
-                <td>@transaction.Product_Id</td>
-                <td>@transaction.Customer_Id</td>
+                <td>@transaction.Customer_Name</td>
+                <td>@transaction.Product_Name</td>
                 <td>@transaction.Transaction_Date</td>
+
             </tr>
         }
     </tbody>

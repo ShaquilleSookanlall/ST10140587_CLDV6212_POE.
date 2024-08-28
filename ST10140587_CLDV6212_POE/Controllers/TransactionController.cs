@@ -2,6 +2,8 @@
 using Microsoft.AspNetCore.Mvc;
 using System.Threading.Tasks;
 using ST10140587_CLDV6212_POE.Services;
+using System.Linq;
+using System.Collections.Generic;
 
 public class TransactionController : Controller
 {
@@ -14,11 +16,44 @@ public class TransactionController : Controller
         _queueService = queueService;
     }
 
+    // Action to display all transactions with customer and product names
     public async Task<IActionResult> Index()
     {
         var transactions = await _tableStorageService.GetAllTransactionsAsync();
+        var customers = await _tableStorageService.GetAllCustomerAsync();
+        var products = await _tableStorageService.GetAllProductsAsync();
+
+        // Create dictionaries for quick lookup
+        var customerDictionary = customers.ToDictionary(c => c.RowKey, c => c.Customer_Name);
+        var productDictionary = products.ToDictionary(p => p.RowKey, p => p.Product_Name);
+
+        // Update transaction to include customer and product names
+        foreach (var transaction in transactions)
+        {
+            if (!string.IsNullOrEmpty(transaction.Customer_Id) &&
+                customerDictionary.TryGetValue(transaction.Customer_Id, out var customerName))
+            {
+                transaction.Customer_Name = customerName;
+            }
+            else
+            {
+                transaction.Customer_Name = "Unknown Customer"; // Fallback or default value
+            }
+
+            if (!string.IsNullOrEmpty(transaction.Product_Id) &&
+                productDictionary.TryGetValue(transaction.Product_Id, out var productName))
+            {
+                transaction.Product_Name = productName;
+            }
+            else
+            {
+                transaction.Product_Name = "Unknown Product"; // Fallback or default value
+            }
+        }
+
         return View(transactions);
     }
+
 
     public async Task<IActionResult> Register()
     {
@@ -40,25 +75,25 @@ public class TransactionController : Controller
             return View(); // Or redirect to another action
         }
 
-        ViewData["Customer"] = customers;
-        ViewData["Products"] = products;
+        ViewData["CustomersList"] = customers;
+        ViewData["ProductsList"] = products;
 
         return View();
     }
 
-
-
-    // Action to handle the form submission and register the sighting
+    // Action to handle the form submission and register the transaction
     [HttpPost]
     public async Task<IActionResult> Register(Transaction transaction)
     {
         if (ModelState.IsValid)
-        {//TableService
+        {
+            // Set transaction details
             transaction.Transaction_Date = DateTime.SpecifyKind(transaction.Transaction_Date, DateTimeKind.Utc);
             transaction.PartitionKey = "TransactionsPartition";
             transaction.RowKey = Guid.NewGuid().ToString();
             await _tableStorageService.AddTransactionAsync(transaction);
-            //MessageQueue
+
+            // Send message to queue
             string message = $"New Transaction by Customer {transaction.Customer_Id} of product {transaction.Product_Id} on {transaction.Transaction_Date}";
             await _queueService.SendMessageAsync(message);
 
@@ -76,10 +111,9 @@ public class TransactionController : Controller
         // Reload customers and products lists if validation fails
         var customers = await _tableStorageService.GetAllCustomerAsync();
         var products = await _tableStorageService.GetAllProductsAsync();
-        ViewData["Customers"] = customers;
-        ViewData["Products"] = products;
+        ViewData["CustomersList"] = customers;
+        ViewData["ProductsList"] = products;
 
         return View(transaction);
     }
-
 }
