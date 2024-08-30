@@ -13,7 +13,7 @@ public class CustomerController : Controller
 
     public async Task<IActionResult> Index()
     {
-        var customers = await _tableStorageService.GetAllCustomerAsync();
+        var customers = await _tableStorageService.GetAllCustomersAsync();
         return View(customers);
     }
 

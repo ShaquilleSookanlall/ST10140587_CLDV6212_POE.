@@ -5,22 +5,23 @@ using System.Threading.Tasks;
 
 public class TableStorageService
 {
-    private readonly TableClient _tableClient;
+    private readonly TableClient _productTableClient;
     private readonly TableClient _customerTableClient;
-    private readonly TableClient _transactionTableClient;
+    private readonly TableClient _orderTableClient;
 
     public TableStorageService(string connectionString)
     {
-        _tableClient = new TableClient(connectionString, "Products");
+        _productTableClient = new TableClient(connectionString, "Products");
         _customerTableClient = new TableClient(connectionString, "Customers");
-        _transactionTableClient = new TableClient(connectionString, "Transactions");
+        _orderTableClient = new TableClient(connectionString, "Transactions");
     }
 
+    //Products
     public async Task<List<Product>> GetAllProductsAsync()
     {
         var products = new List<Product>();
 
-        await foreach (var product in _tableClient.QueryAsync<Product>())
+        await foreach (var product in _productTableClient.QueryAsync<Product>())
         {
             products.Add(product);
         }
@@ -38,7 +39,7 @@ public class TableStorageService
 
         try
         {
-            await _tableClient.AddEntityAsync(product);
+            await _productTableClient.AddEntityAsync(product);
         }
         catch (RequestFailedException ex)
         {
@@ -49,14 +50,14 @@ public class TableStorageService
 
     public async Task DeleteProductAsync(string partitionKey, string rowKey)
     {
-        await _tableClient.DeleteEntityAsync(partitionKey, rowKey);
+        await _productTableClient.DeleteEntityAsync(partitionKey, rowKey);
     }
 
     public async Task<Product?> GetProductAsync(string partitionKey, string rowKey)
     {
         try
         {
-            var response = await _tableClient.GetEntityAsync<Product>(partitionKey, rowKey);
+            var response = await _productTableClient.GetEntityAsync<Product>(partitionKey, rowKey);
             return response.Value;
         }
         catch (RequestFailedException ex) when (ex.Status == 404)
@@ -65,7 +66,9 @@ public class TableStorageService
             return null;
         }
     }
-    public async Task<List<Customer>> GetAllCustomerAsync()
+
+    //Customers
+    public async Task<List<Customer>> GetAllCustomersAsync()
     {
         var customers = new List<Customer>();
 
@@ -111,35 +114,68 @@ public class TableStorageService
         }
     }
 
-    public async Task AddTransactionAsync(Transaction transaction)
+    // Orders
+    public async Task<List<Order>> GetAllOrdersAsync()
     {
-        if (string.IsNullOrEmpty(transaction.PartitionKey) || string.IsNullOrEmpty(transaction.RowKey))
+        var orders = new List<Order>();
+        await foreach (var order in _orderTableClient.QueryAsync<Order>())
+        {
+            orders.Add(order);
+        }
+        return orders;
+    }
+
+    public async Task AddOrderAsync(Order order)
+    {
+        if (string.IsNullOrEmpty(order.PartitionKey) || string.IsNullOrEmpty(order.RowKey))
         {
             throw new ArgumentException("PartitionKey and RowKey must be set.");
         }
 
         try
         {
-            await _transactionTableClient.AddEntityAsync(transaction);
+            await _orderTableClient.AddEntityAsync(order);
         }
         catch (RequestFailedException ex)
         {
-            throw new InvalidOperationException("Error adding sighting to Table Storage", ex);
+            throw new InvalidOperationException("Error adding order to Table Storage", ex);
         }
     }
 
-    
-    public async Task<List<Transaction>> GetAllTransactionsAsync()
+    public async Task DeleteOrderAsync(string partitionKey, string rowKey)
     {
-        var transactions = new List<Transaction>();
+        await _orderTableClient.DeleteEntityAsync(partitionKey, rowKey);
+    }
 
-        await foreach (var transaction in _transactionTableClient.QueryAsync<Transaction>())
+    public async Task<Order?> GetOrderAsync(string partitionKey, string rowKey)
+    {
+        try
         {
-            transactions.Add(transaction);
+            var response = await _orderTableClient.GetEntityAsync<Order>(partitionKey, rowKey);
+            return response.Value;
+        }
+        catch (RequestFailedException ex) when (ex.Status == 404)
+        {
+            return null;
+        }
+    }
+
+    // New method to update an order
+    public async Task UpdateOrderAsync(Order order)
+    {
+        if (order == null)
+        {
+            throw new ArgumentNullException(nameof(order), "Order cannot be null.");
         }
 
-        return transactions;
+        try
+        {
+            await _orderTableClient.UpdateEntityAsync(order, order.ETag, TableUpdateMode.Replace);
+        }
+        catch (RequestFailedException ex)
+        {
+            throw new InvalidOperationException("Error updating order in Table Storage", ex);
+        }
     }
+
 }
-
-
